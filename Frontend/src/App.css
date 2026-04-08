@@ -1,0 +1,73 @@
+/* 1. Global Fonts & Smooth Scroll */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+html {
+  scroll-behavior: smooth; /* Navigation links par click karne se smooth scroll hoga */
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: #333;
+  margin: 0;
+  padding: 0;
+}
+
+/* 2. Professional Card Effects */
+.card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: none !important;
+}
+
+.card:hover {
+  transform: translateY(-5px); /* Card halka sa upar uthega */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
+
+/* 3. Custom Buttons */
+.btn-primary {
+  background-color: #007bff !important;
+  border: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3 !important;
+  transform: scale(1.05); /* Button halka sa bada hoga */
+}
+
+/* 4. Navbar Styling */
+.navbar {
+  padding: 15px 0;
+}
+
+.nav-link {
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #007bff !important;
+}
+
+/* 5. Hero Image Animation */
+.img-fluid {
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0px); }
+}
+
+/* 6. Footer Sticky Management */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 7. Input Fields */
+.form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.1);
+}

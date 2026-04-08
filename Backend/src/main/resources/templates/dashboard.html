@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>SmartBank | Professional Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background: #020617; font-family: 'Inter', sans-serif; color: white; }
+        .glass-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; backdrop-filter: blur(10px); }
+        .balance-gradient { background: linear-gradient(135deg, #2563eb, #7c3aed); }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <h1 class="fw-black italic tracking-tighter">SMARTBANK</h1>
+            <div class="glass-card px-4 py-2">
+                Welcome, <span class="text-info fw-bold" th:text="${user.fullName}">Riya Gaikwad</span>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="glass-card balance-gradient p-5 mb-4 shadow-lg">
+                    <p class="text-uppercase small fw-bold opacity-75">Available Balance</p>
+                    <h2 class="display-3 fw-bold" th:text="'₹' + ${user.account.balance}">₹50,000</h2>
+                    <div class="mt-4">
+                        <button class="btn btn-light rounded-pill px-4 fw-bold">Send Money</button>
+                        <button class="btn btn-outline-light rounded-pill px-4 ms-2">Request Statement</button>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-4">
+                    <h4 class="mb-4">Recent Transactions</h4>
+                    <table class="table table-dark table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="txn : ${transactions}">
+                                <td th:text="${txn.date}">23 Mar 2026</td>
+                                <td th:text="${txn.description}">Salary Credit</td>
+                                <td class="text-success fw-bold" th:text="'+ ₹' + ${txn.amount}">+ ₹25,000</td>
+                                <td><span class="badge bg-success">Success</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="glass-card p-4 mb-4 text-center">
+                    <div class="rounded-circle bg-primary d-inline-block p-3 mb-3">
+                        <i data-lucide="shield-check" size="40"></i>
+                    </div>
+                    <h5>Verified Account</h5>
+                    <p class="small text-secondary" th:text="'A/C: ' + ${user.account.accountNumber}">A/C: 1001223344</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
