@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Amount kisi bhi format mein ho (500, "500", "₹1,500", "- ₹499") to number bana do
+const getAmount = (t) => {
+    const raw = t.amount ?? t.amt ?? t.price ?? t.value ?? 0;
+    if (typeof raw === 'number') return Math.abs(raw);
+    const n = parseFloat(String(raw).replace(/[^0-9.]/g, ''));
+    return isNaN(n) ? 0 : n;
+};
+
+// credit hai ya debit
+const isCredit = (t) => String(t.type || '').toLowerCase() === 'credit';
+
 function Dashboard({ user, balance, setBalance, transactions, addTransactionEntry }) {
     const navigate = useNavigate();
     const [showAddFunds, setShowAddFunds] = useState(false);
@@ -8,26 +19,29 @@ function Dashboard({ user, balance, setBalance, transactions, addTransactionEntr
     const [activeService, setActiveService] = useState(null);
     const [amountInput, setAmountInput] = useState("");
 
-    // 🟢 Dynamic User Name & Account Logic
+    // Dynamic User Name & Account Logic
     const displayName = user?.username || localStorage.getItem("userName") || "User";
     const maskedAcc = user?.accNo ? `XXXX XXXX ${user.accNo.slice(-4)}` : "6245 **** **** 8812";
 
     const handlePayBill = () => {
-        if (!amountInput || amountInput <= 0) return alert("Please enter a valid amount");
-        if (amountInput > balance) return alert("Insufficient Balance!");
+        const amt = Number(amountInput);
+        if (!amt || amt <= 0) return alert("Please enter a valid amount");
+        if (amt > balance) return alert("Insufficient Balance!");
 
-        setBalance(prev => prev - parseInt(amountInput)); 
-        addTransactionEntry(`${activeService} Bill Payment`, amountInput, 'debit'); 
-        alert(`${activeService} bill of ₹${amountInput} paid successfully!`);
+        setBalance(prev => prev - amt);
+        addTransactionEntry(`${activeService} Bill Payment`, amt, 'debit');
+        alert(`${activeService} bill of ₹${amt} paid successfully!`);
         setAmountInput("");
         setActiveService(null);
     };
 
     const handleAddFunds = () => {
-        if (!amountInput || amountInput <= 0) return alert("Please enter amount");
-        setBalance(prev => prev + parseInt(amountInput)); 
-        addTransactionEntry("Funds Added to Wallet", amountInput, 'credit'); 
-        alert(`₹${amountInput} added to your account!`);
+        const amt = Number(amountInput);
+        if (!amt || amt <= 0) return alert("Please enter amount");
+
+        setBalance(prev => prev + amt);
+        addTransactionEntry("Funds Added to Wallet", amt, 'credit');
+        alert(`₹${amt} added to your account!`);
         setAmountInput("");
         setShowAddFunds(false);
     };
@@ -50,22 +64,28 @@ function Dashboard({ user, balance, setBalance, transactions, addTransactionEntr
             </div>
 
             <div className="row g-4">
-                {/* 💳 Account Card */}
+                {/* Account Card */}
                 <div className="col-md-5 col-lg-4">
-                    <div className="card border-0 shadow-lg p-4 text-white h-100 position-relative overflow-hidden" 
-                         style={{ 
-                            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', 
+                    <div className="card border-0 shadow-lg p-4 text-white h-100 position-relative overflow-hidden"
+                         style={{
+                            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
                             borderRadius: '30px',
-                            minHeight: '220px' 
+                            minHeight: '220px'
                          }}>
                         <div className="position-absolute top-0 end-0 p-3 opacity-25" style={{ fontSize: '100px', transform: 'translate(30%, -30%)' }}>🏦</div>
-                        
+
                         <div className="d-flex justify-content-between align-items-start position-relative">
                             <div>
                                 <p className="small mb-1 opacity-75 fw-semibold uppercase" style={{ letterSpacing: '1px' }}>Available Balance</p>
-                                <h1 className="fw-bold mb-0">₹{balance.toLocaleString('en-IN')}</h1>
+                                <h1 className="fw-bold mb-0">₹{Number(balance).toLocaleString('en-IN')}</h1>
                             </div>
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" width="50" className="opacity-75 bg-white p-1 rounded" />
+                            {/* Visa badge: image ki jagah text, taaki kabhi toote nahi */}
+                            <span
+                                className="bg-white rounded px-2 py-1 fw-bold fst-italic"
+                                style={{ color: '#1a1f71', fontSize: '18px', letterSpacing: '1px', lineHeight: 1 }}
+                            >
+                                VISA
+                            </span>
                         </div>
 
                         <div className="mt-5 position-relative">
@@ -100,8 +120,8 @@ function Dashboard({ user, balance, setBalance, transactions, addTransactionEntr
                                 { icon: '🏦', label: 'Add Funds', action: () => {setShowAddFunds(!showAddFunds); setShowPayBills(false);} }
                             ].map((btn, idx) => (
                                 <div className="col-6 col-md-3" key={idx}>
-                                    <button 
-                                        onClick={btn.action || (() => navigate(btn.path))} 
+                                    <button
+                                        onClick={btn.action || (() => navigate(btn.path))}
                                         className={`btn ${btn.primary ? 'btn-primary shadow-sm border-0' : 'btn-light border'} w-100 py-3 rounded-4 fw-bold d-flex flex-column align-items-center transition-all`}
                                     >
                                         <span className="fs-3 mb-1">{btn.icon}</span>
@@ -180,15 +200,14 @@ function Dashboard({ user, balance, setBalance, transactions, addTransactionEntr
                                 </tr>
                             </thead>
                             <tbody>
-                                {transactions.length > 0 ? transactions.slice(0, 5).map((t) => (
-                                    <tr key={t.id}>
+                                {transactions && transactions.length > 0 ? transactions.slice(0, 5).map((t, i) => (
+                                    <tr key={t.id ?? i}>
                                         <td className="ps-4 text-muted small">{t.date}</td>
                                         <td>
                                             <div className="fw-semibold">{t.remark}</div>
                                         </td>
-                                        {/* 🟢 FIXED: Double symbol logic fixed below */}
-                                        <td className={`text-center fw-bold ${t.type === 'credit' ? 'text-success' : 'text-danger'}`}>
-                                            {t.type === 'credit' ? '+ ₹' : '- ₹'}{Number(t.amount).toLocaleString('en-IN')}
+                                        <td className={`text-center fw-bold ${isCredit(t) ? 'text-success' : 'text-danger'}`}>
+                                            {isCredit(t) ? '+ ₹' : '- ₹'}{getAmount(t).toLocaleString('en-IN')}
                                         </td>
                                         <td className="pe-4 text-end">
                                             <span className={`badge rounded-pill ${t.status === 'Success' ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'}`}>
