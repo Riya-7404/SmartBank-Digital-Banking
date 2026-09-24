@@ -1,33 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 function Scanner({ user }) {
     const [isMyQR, setIsMyQR] = useState(true);
-    
-    // 🟢 1. Dynamic User Name Check
+
+    // Dynamic user name
     const activeName = user?.username || localStorage.getItem("userName") || "User";
 
     useEffect(() => {
-        let scanner;
-        if (!isMyQR) {
-            // 🟢 2. Scanner Initialization
-            scanner = new Html5QrcodeScanner('reader', {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0,
-                showTorchButtonIfSupported: true,
+        if (isMyQR) return;
+
+        const html5QrCode = new Html5Qrcode("reader");
+        let started = false;
+
+        const startPromise = html5QrCode
+            .start(
+                { facingMode: "environment" }, // back camera
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    alert("Payment request for: " + decodedText);
+                    html5QrCode
+                        .stop()
+                        .then(() => html5QrCode.clear())
+                        .catch(() => {});
+                },
+                () => {} // per-frame scan errors ignore
+            )
+            .then(() => {
+                started = true;
+            })
+            .catch((err) => {
+                console.error("Camera start error:", err);
+                alert("Camera nahi khul paya: " + err);
             });
 
-            scanner.render((result) => {
-                alert("Payment request for: " + result);
-                scanner.clear();
-            }, (error) => {
-                // Scanning frame by frame
-            });
-        }
-
+        // Cleanup when tab changes / component unmounts
         return () => {
-            if (scanner) scanner.clear().catch(err => console.error("Scanner error", err));
+            startPromise.then(() => {
+                if (started) {
+                    html5QrCode
+                        .stop()
+                        .then(() => html5QrCode.clear())
+                        .catch(() => {});
+                }
+            });
         };
     }, [isMyQR]);
 
@@ -58,20 +74,20 @@ function Scanner({ user }) {
                     {isMyQR ? (
                         <div className="py-4 animate__animated animate__zoomIn w-100">
                             <div className="p-3 bg-light rounded-4 d-inline-block mb-3 border">
-                                {/* 🟢 QR with Dynamic Data */}
+                                {/* QR with dynamic data */}
                                 <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SmartBank-${activeName}`} alt="My QR" className="img-fluid" style={{ borderRadius: '10px' }} />
                             </div>
-                            
-                            {/* 🟢 Login user's name displayed here */}
+
+                            {/* Logged-in user's name */}
                             <h5 className="fw-bold mb-1 text-dark">{activeName}</h5>
                             <p className="text-muted small">ID: {activeName.toLowerCase().replace(/\s/g, '')}@smartbank</p>
                             <span className="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 mt-2">Verified Merchant</span>
                         </div>
                     ) : (
                         <div className="w-100 animate__animated animate__fadeIn">
-                            {/* Camera Feed */}
+                            {/* Camera feed */}
                             <div id="reader" className="w-100 rounded-4 overflow-hidden border-0"></div>
-                            
+
                             <div className="mt-4 pt-3 border-top">
                                 <p className="small text-muted mb-3">Or choose from your device</p>
                                 <label htmlFor="qr-upload" className="btn btn-outline-primary rounded-pill w-100 py-2 fw-bold transition-all">
@@ -90,16 +106,8 @@ function Scanner({ user }) {
                 </div>
             </div>
 
-            {/* 🟢 CSS: Faltu library buttons ko hide karne ke liye */}
+            {/* Sirf video ko style karo, library ke elements hide mat karo */}
             <style>{`
-                #reader__dashboard_section_csr, 
-                #reader__dashboard_section_fsit,
-                #reader__camera_selection,
-                #reader__status_span,
-                #reader img,
-                #reader span { 
-                    display: none !important; 
-                }
                 #reader { border: none !important; }
                 #reader video { border-radius: 15px !important; }
             `}</style>
